@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dizy — visual diffs for diffable HTML docs</title>
+<style>
+  :root {
+    --bg: #f6f6f4; --panel: #ffffff; --ink: #17171c; --muted: #6d6d78;
+    --rule: #e3e3df; --accent: #3b5bdb; --err: #c92a2a;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #131316; --panel: #1c1c21; --ink: #ececf1; --muted: #9a9aa6; --rule: #2c2c33; --accent: #91a7ff; --err: #ff8787; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+  header.app { padding: 18px 24px 14px; border-bottom: 1px solid var(--rule); display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+  .wordmark { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+  .tagline { color: var(--muted); font-size: 13px; }
+  .trust { margin-left: auto; color: var(--muted); font-size: 12px; font-family: var(--mono); }
+  main { padding: 18px 24px 60px; }
+  form#pr-form { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  input[type="url"], input[type="password"] { background: var(--panel); color: var(--ink); border: 1px solid var(--rule); border-radius: 6px; padding: 9px 12px; font-size: 14px; }
+  #pr-url { flex: 1 1 380px; }
+  #pr-token { flex: 0 1 300px; }
+  button { background: var(--accent); color: #fff; border: 0; border-radius: 6px; padding: 9px 16px; font-size: 14px; cursor: pointer; }
+  #files button, #change-nav button { background: var(--panel); color: var(--ink); border: 1px solid var(--rule); }
+  #files button.active { border-color: var(--accent); color: var(--accent); }
+  .hint { color: var(--muted); font-size: 12.5px; margin: 6px 2px 0; }
+  .local { margin-top: 10px; color: var(--muted); font-size: 13px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  #status { margin: 16px 2px 4px; min-height: 1.4em; }
+  #status.error { color: var(--err); }
+  #rate { color: var(--muted); font-size: 12px; font-family: var(--mono); margin: 0 2px 8px; min-height: 1.2em; }
+  #rate.low { color: var(--err); }
+  ul#files { list-style: none; display: flex; gap: 8px; flex-wrap: wrap; padding: 0; margin: 10px 0; }
+  #files .fname { font-family: var(--mono); font-size: 12.5px; }
+  #files .fstat { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+  #files .fstat.added { color: #2ea043; } #files .fstat.removed { color: #f85149; }
+  #files .fstat.modified, #files .fstat.renamed { color: #d29922; }
+  #files .fcounts { font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
+  #chrome-diff details { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 8px 14px; margin: 10px 0; }
+  #chrome-diff summary { cursor: pointer; color: #d29922; font-size: 13.5px; }
+  #chrome-diff pre, pre.text-diff { font-family: var(--mono); font-size: 12px; line-height: 1.5; overflow-x: auto; padding: 10px 0 4px; margin: 0; }
+  .chrome-added { color: #2ea043; } .chrome-removed { color: #f85149; } .chrome-same { color: var(--muted); }
+  #change-nav { display: flex; gap: 8px; align-items: center; margin: 8px 0; color: var(--muted); font-size: 13px; }
+  #viewer { display: flex; gap: 14px; align-items: flex-start; margin-top: 10px; max-height: calc(100vh - 130px); overflow: auto; scroll-behavior: smooth; }
+  .pane-col { flex: 1 1 0; min-width: 0; }
+  .pane-title { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); padding: 4px 2px 6px; position: sticky; top: 0; background: var(--bg); z-index: 1; }
+  iframe.dizy-pane { width: 100%; border: 1px solid var(--rule); border-radius: 6px; background: #fff; display: block; }
+  .violations { background: var(--panel); border: 1px solid var(--err); border-radius: 6px; padding: 12px 16px; margin: 12px 0; font-size: 13.5px; }
+  .violations ul { margin: 8px 0 0; padding-left: 20px; }
+  .violations li { font-family: var(--mono); font-size: 12px; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<header class="app">
+  <span class="wordmark">dizy</span>
+  <span class="tagline">twins, but not identical — visual diffs for diffable HTML docs</span>
+  <span class="trust">100% client-side · your docs never leave this page</span>
+</header>
+<main>
+  <form id="pr-form">
+    <input id="pr-url" type="url" placeholder="https://github.com/owner/repo/pull/123" required>
+    <input id="pr-token" type="password" placeholder="fine-grained token (optional)" autocomplete="off">
+    <button type="submit">Diff the docs</button>
+  </form>
+  <p class="hint">
+    Public repos work with no token (60 requests/hr). A fine-grained token with
+    Contents:read + Pull&nbsp;requests:read raises the limit to 5000/hr and enables private
+    repos. Tokens stay in memory — never stored, never sent anywhere but api.github.com.
+  </p>
+  <div class="local">
+    <span>Or compare two local files, zero network:</span>
+    <label>before <input id="local-old" type="file" accept=".html,.htm"></label>
+    <label>after <input id="local-new" type="file" accept=".html,.htm"></label>
+  </div>
+  <p id="status"></p>
+  <p id="rate"></p>
+  <ul id="files"></ul>
+  <div id="chrome-diff"></div>
+  <div id="change-nav"></div>
+  <div id="viewer"></div>
+</main>
+<script type="module" src="src/app.js"></script>
+</body>
+</html>

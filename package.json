@@ -1,0 +1,18 @@
+{
+  "name": "dizy",
+  "version": "0.1.0",
+  "description": "Visual side-by-side diffs of diffable-HTML engineering docs in GitHub PRs. dizy is short for dizygotic: twins, but not identical.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test 'test/**/*.test.js'",
+    "serve": "python3 -m http.server 8137"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kdbanman/dizy.git"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "jsdom": "^24.0.0"
+  }
+}
