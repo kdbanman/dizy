@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="dizy" content="0.1">
+<title>Dizy — Diffable HTML 0.1</title>
+<style>
+  :root{
+    --paper:#ffffff;--wash:#f5f5f4;--ink:#15151a;--ink-soft:#3c3c43;
+    --muted:#737380;--faint:#a6a6b0;--rule:#e6e6e3;--code-bg:#f3f3f1;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--wash);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6}
+  .sheet{max-width:820px;margin:40px auto;background:var(--paper);border:1px solid var(--rule);border-radius:6px;padding:56px 64px 72px}
+  .mast{border-bottom:1px solid var(--ink);padding-bottom:16px;margin-bottom:34px}
+  .wordmark{font-size:28px;font-weight:700;letter-spacing:-.02em}
+  .mast-meta{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin-top:10px}
+  .lede{font-size:18px;line-height:1.5;color:var(--ink);margin:0 0 6px}
+  section{margin-top:44px}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .eyebrow .n{color:var(--faint)}
+  .eyebrow::after{content:"";flex:1;height:1px;background:var(--rule)}
+  h2{font-size:20px;font-weight:650;letter-spacing:-.015em;margin:0 0 12px}
+  h3{font-size:15px;font-weight:660;margin:22px 0 7px}
+  p{margin:0 0 14px;color:var(--ink-soft)}
+  p strong,li strong,td strong{color:var(--ink);font-weight:620}
+  code{font-family:var(--mono);font-size:.85em;background:var(--code-bg);padding:1px 5px;border-radius:4px;color:var(--ink)}
+  ul{margin:0 0 14px;padding:0;list-style:none}
+  li{position:relative;padding-left:20px;margin-bottom:8px;color:var(--ink-soft)}
+  li::before{content:"—";position:absolute;left:0;color:var(--faint);font-family:var(--mono)}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+  th{text-align:left;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--ink);padding:0 14px 8px 0}
+  td{padding:8px 14px 8px 0;border-bottom:1px solid var(--rule);color:var(--ink-soft);vertical-align:top}
+  td code{white-space:normal}
+  pre{background:#fbfbfa;border:1px solid var(--rule);border-radius:6px;font-family:var(--mono);font-size:12.5px;line-height:1.55;color:var(--ink-soft);padding:16px 18px;margin:14px 0;overflow-x:auto}
+  .note{border-left:2px solid var(--ink);padding:2px 0 2px 18px;margin:16px 0;color:var(--ink)}
+  .note .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:4px}
+  .foot{margin-top:52px;padding-top:16px;border-top:1px solid var(--rule);font-family:var(--mono);font-size:11px;color:var(--faint);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+  a{color:var(--ink)}
+  @media (max-width:680px){.sheet{margin:0;border:0;border-radius:0;padding:32px 20px 52px}}
+  @media print{body{background:#fff}.sheet{border:0;margin:0;max-width:none}}
+</style>
+</head>
+<body>
+<main class="sheet">
+
+  <header class="mast">
+    <div class="wordmark">dizy</div>
+    <div class="mast-meta">Diffable HTML · spec version 0.1 · normative</div>
+  </header>
+
+  <p class="lede">Diffable HTML is a constrained subset of HTML and CSS for engineering documents — rich enough for specs, PRDs, and architecture docs; constrained enough that two versions of a file can be rendered side by side, aligned block by block, with changes highlighted. This document is itself written in the subset it defines.</p>
+
+  <section id="s1">
+    <div class="eyebrow"><span class="n">01</span> Design contract</div>
+    <h2>Three guarantees buy one capability</h2>
+    <p>A conformant document guarantees three things, and in exchange any two versions of it can be visually diffed:</p>
+    <ul>
+      <li><strong>Inert.</strong> No scripts, no event handlers, no forms. Nothing executes.</li>
+      <li><strong>Self-contained.</strong> No external references of any kind — no images, fonts, stylesheets, imports, or media. The file renders identically offline, forever, from a single blob at a single git ref.</li>
+      <li><strong>Linear.</strong> Reading order is DOM order. Styling may decorate blocks but must not relocate meaning; the document flattens faithfully to a sequence of blocks.</li>
+    </ul>
+    <p>Inert and self-contained are what make rendering repository-controlled HTML safe at all — the reason GitHub refuses to render HTML is that arbitrary HTML is arbitrary code. Linear is what makes the side-by-side alignment model work: matched blocks pair up, spacers equalize their positions, and highlights land on the block that changed.</p>
+  </section>
+
+  <section id="s2">
+    <div class="eyebrow"><span class="n">02</span> Document shape</div>
+    <h2>One file, head and body</h2>
+    <pre>&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+  &lt;meta charset="utf-8"&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+  &lt;meta name="dizy" content="0.1"&gt;          &lt;!-- advisory conformance declaration --&gt;
+  &lt;title&gt;Required&lt;/title&gt;
+  &lt;style&gt;/* the document's own design, under the CSS policy */&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;!-- a sequence of blocks --&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre>
+    <p>The head may contain only: <code>meta charset</code>, <code>meta name="viewport"</code>, <code>meta name="description"</code>, <code>meta name="dizy"</code>, one required <code>title</code>, and <code>style</code> elements. Everything else — <code>link</code>, <code>base</code>, <code>script</code>, <code>meta http-equiv</code> — is a violation. The <code>dizy</code> meta declares intended conformance; renderers validate regardless and never trust the declaration.</p>
+  </section>
+
+  <section id="s3">
+    <div class="eyebrow"><span class="n">03</span> Elements</div>
+    <h2>The allowlist</h2>
+    <table>
+      <thead><tr><th>Role</th><th>Elements</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Containers</strong> (traversed, not diffed directly)</td>
+            <td><code>main header footer nav section article aside div blockquote figure details</code></td></tr>
+        <tr><td><strong>Leaf blocks</strong> (the units of diffing and alignment)</td>
+            <td><code>h1</code>–<code>h6</code> <code>p pre hr ul ol dl table figcaption summary</code> — plus their internals: <code>li dt dd caption thead tbody tfoot tr th td</code></td></tr>
+        <tr><td><strong>Inline</strong></td>
+            <td><code>a span strong em b i s u code kbd samp var mark small sub sup abbr time del ins q cite dfn br wbr</code></td></tr>
+        <tr><td><strong>Banned</strong></td>
+            <td><code>script iframe object embed img svg picture video audio canvas form input button select textarea link base template noscript</code>, custom elements, and anything else not listed above</td></tr>
+      </tbody>
+    </table>
+    <p>A container whose content is entirely inline (a styled callout <code>div</code>, say) is treated as a leaf block. Figures and diagrams are expressed as <code>pre</code> ASCII/Unicode art in 0.1 — inline SVG and data-URI images are the most likely additions in a future version, and are excluded now because each adds diff and containment questions that deserve their own decision.</p>
+  </section>
+
+  <section id="s4">
+    <div class="eyebrow"><span class="n">04</span> Attributes</div>
+    <h2>Global few, local fewer</h2>
+    <table>
+      <thead><tr><th>Scope</th><th>Allowed</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>All elements</td><td><code>id class lang dir title data-*</code></td>
+            <td><code>id</code> doubles as a diff identity key: blocks with equal ids always pair</td></tr>
+        <tr><td><code>a</code></td><td><code>href</code></td>
+            <td>Only <code>#fragment</code>, relative paths, and absolute <code>http(s)</code>. No other schemes. Renderers neuter navigation.</td></tr>
+        <tr><td>Table cells</td><td><code>colspan rowspan scope headers</code></td><td></td></tr>
+        <tr><td>Various</td><td><code>time[datetime] ins/del[datetime cite] details[open] ol[start reversed type] li[value]</code></td><td></td></tr>
+        <tr><td>Any</td><td><code>style</code></td><td>Subject to the CSS policy below</td></tr>
+        <tr><td>Banned</td><td>every <code>on*</code> handler; everything else</td>
+            <td>Handlers are errors; unknown attributes are warnings and are stripped</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="s5">
+    <div class="eyebrow"><span class="n">05</span> CSS policy</div>
+    <h2>Your typography, no exit</h2>
+    <p>Documents carry their own design — that is the point of writing docs in HTML. The policy constrains capability, not taste:</p>
+    <ul>
+      <li><strong>At-rules:</strong> <code>@media</code> and <code>@supports</code> only, nesting allowed. <code>@import @font-face @namespace @property @layer @keyframes @page</code> are violations.</li>
+      <li><strong>No fetch functions, anywhere:</strong> <code>url() image() image-set() src() element()</code> are violations in any declaration — including custom property values, which closes the <code>--x: url(…)</code> → <code>var(--x)</code> laundering route. Fonts are system stacks only.</li>
+      <li><strong>No <code>position: fixed</code>.</strong> It escapes document flow entirely. <code>relative</code>, <code>absolute</code>, and <code>sticky</code> are allowed for decoration — list markers, section rules, sticky headers — under the Linear guarantee: styling must not move content out of reading order.</li>
+    </ul>
+    <div class="note">
+      <span class="lbl">Enforcement vs. safety</span>
+      The validator enforces this policy as <strong>conformance</strong>. It is not the safety boundary. Renderers sandbox panes so that even a doc that somehow evaded validation cannot execute or fetch: an iframe with <code>sandbox="allow-same-origin"</code> (scripts can never run) and an injected <code>Content-Security-Policy</code> meta of <code>default-src 'none'; style-src 'unsafe-inline'</code> (no fetch can leave the pane, verified at the network level). Belt, suspenders, and the belt is spec-guaranteed.
+    </div>
+  </section>
+
+  <section id="s6">
+    <div class="eyebrow"><span class="n">06</span> The block model</div>
+    <h2>How a document becomes a sequence</h2>
+    <p>Renderers flatten the body depth-first: containers are entered, leaf blocks are collected. Each leaf block is fingerprinted by its tag, its whitespace-normalized text tokens, and its attribute signature. Two versions of a document then diff in three phases:</p>
+    <ul>
+      <li><strong>Exact</strong> — longest common subsequence over block fingerprints pairs the unchanged majority.</li>
+      <li><strong>Fuzzy</strong> — within the gaps, blocks pair as <em>modified</em> when token similarity clears a threshold; equal <code>id</code>s force a pair; heading levels may differ (an <code>h2</code> promoted to <code>h3</code> is the same heading, changed).</li>
+      <li><strong>Rest</strong> — unpaired old blocks are <em>removed</em>, unpaired new blocks are <em>added</em>. No move detection: a moved block reads as removed + added, on purpose.</li>
+    </ul>
+    <p>Modified blocks get word-level highlighting (words, never characters). Tables diff by rows first — an inserted row must not smear every later row as changed. Changes to the head (title, metas, <code>style</code>) affect the whole page and are reported separately as a document-chrome diff rather than pretending to fit block alignment.</p>
+  </section>
+
+  <section id="s7">
+    <div class="eyebrow"><span class="n">07</span> Conformance</div>
+    <h2>Violations, and what happens to them</h2>
+    <table>
+      <thead><tr><th>Class</th><th>Examples</th><th>Consequence</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Error</strong></td>
+            <td>banned element, event handler, banned CSS construct, disallowed href scheme, missing title, disallowed head content</td>
+            <td>The document is not diffable HTML. Renderers refuse the rendered view and fall back to a plain text diff, listing the violations.</td></tr>
+        <tr><td><strong>Warning</strong></td>
+            <td>unknown attribute on an allowed element</td>
+            <td>Stripped and reported; rendering proceeds.</td></tr>
+      </tbody>
+    </table>
+    <p>Version 0.1 is deliberately strict: everything not allowed is banned, because loosening a constraint later is painless and tightening one breaks published documents. The version in <code>meta name="dizy"</code> exists so future renderers can apply the right policy to old files.</p>
+  </section>
+
+  <footer class="foot">
+    <span>dizy · diffable html 0.1</span>
+    <span>this document validates against itself</span>
+  </footer>
+
+</main>
+</body>
+</html>
